@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <meta name="robots" content="noindex, nofollow">
+
+    <title>Halley 17 Anniversary Edition | Visualizador 3D</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #191919;
+        }
+
+        #viewer3d {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            display: block;
+            background: #191919;
+        }
+    </style>
+</head>
+
+<body>
+
+    <iframe
+        id="viewer3d"
+        src="https://lucasmede1ros.github.io/3d/?model=halley/17-anniversary-edition.glb"
+        title="Halley 17 Anniversary Edition - Visualizador 3D"
+        allowfullscreen>
+    </iframe>
+
+    <script>
+        (() => {
+            "use strict";
+
+            const githubOrigin =
+                "https://lucasmede1ros.github.io";
+
+            function fecharPagina() {
+
+                if (window.parent !== window) {
+
+                    window.parent.postMessage(
+                        {
+                            type: "viewer3d",
+                            action: "close"
+                        },
+                        "*"
+                    );
+
+                    return;
+                }
+
+                if (window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+
+                window.location.href =
+                    "https://pichaugaming.com.br/";
+            }
+
+            window.addEventListener(
+                "message",
+                event => {
+
+                    if (event.origin !== githubOrigin) {
+                        return;
+                    }
+
+                    if (
+                        !event.data ||
+                        event.data.type !== "viewer3d"
+                    ) {
+                        return;
+                    }
+
+                    if (event.data.action === "close") {
+                        fecharPagina();
+                    }
+                }
+            );
+
+        })();
+    </script>
+
+</body>
+</html>
