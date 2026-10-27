@@ -2,8 +2,11 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
 
     <meta name="robots" content="noindex, nofollow">
 
@@ -19,6 +22,7 @@
             width: 100%;
             height: 100%;
             margin: 0;
+            padding: 0;
             overflow: hidden;
             background: #383838;
         }
@@ -29,19 +33,31 @@
             width: 100%;
             height: 100%;
             display: block;
+            background: #383838;
             touch-action: none;
+        }
+
+        #viewer3d canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
         }
 
         #loading {
             position: fixed;
             inset: 0;
+            z-index: 10;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #ffffff;
             background: #383838;
-            font: 14px Arial, sans-serif;
-            z-index: 10;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-align: center;
+            padding: 20px;
             pointer-events: none;
         }
 
@@ -49,40 +65,75 @@
             display: none;
         }
     </style>
+
+    <!-- IMPORT MAP THREE.JS -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+        }
+    }
+    </script>
 </head>
 
 <body>
 
     <div id="viewer3d"></div>
-    <div id="loading">CARREGANDO MODELO 3D...</div>
+
+    <div id="loading">
+        CARREGANDO MODELO 3D...
+    </div>
 
     <script type="module">
-        import * as THREE from
-            "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js";
+
+        import * as THREE from "three";
 
         import { OrbitControls } from
-            "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/controls/OrbitControls.js";
+            "three/addons/controls/OrbitControls.js";
 
         import { GLTFLoader } from
-            "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js";
+            "three/addons/loaders/GLTFLoader.js";
 
         import { KTX2Loader } from
-            "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/KTX2Loader.js";
+            "three/addons/loaders/KTX2Loader.js";
 
         import { DRACOLoader } from
-            "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/DRACOLoader.js";
+            "three/addons/loaders/DRACOLoader.js";
 
         import { RoomEnvironment } from
-            "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/environments/RoomEnvironment.js";
+            "three/addons/environments/RoomEnvironment.js";
 
-        const container = document.getElementById("viewer3d");
-        const loading = document.getElementById("loading");
 
-        // CENA
+        /* =========================================
+           CONFIGURAÇÕES
+        ========================================= */
+
+        const MODEL_URL = "./LEO_STRONDA_PRETA.glb";
+
+        const BACKGROUND_COLOR = "#383838";
+
+        const container =
+            document.getElementById("viewer3d");
+
+        const loading =
+            document.getElementById("loading");
+
+
+        /* =========================================
+           CENA
+        ========================================= */
+
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color("#383838");
 
-        // CÂMERA
+        scene.background =
+            new THREE.Color(BACKGROUND_COLOR);
+
+
+        /* =========================================
+           CÂMERA
+        ========================================= */
+
         const camera = new THREE.PerspectiveCamera(
             35,
             window.innerWidth / window.innerHeight,
@@ -92,74 +143,121 @@
 
         camera.position.set(2, 1.5, 3);
 
-        // RENDERIZAÇÃO
+
+        /* =========================================
+           RENDERIZADOR
+        ========================================= */
+
         const renderer = new THREE.WebGLRenderer({
             antialias: true,
             alpha: false,
             powerPreference: "high-performance"
         });
 
-        renderer.setSize(window.innerWidth, window.innerHeight);
-
         renderer.setPixelRatio(
             Math.min(window.devicePixelRatio, 2)
         );
 
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+
+        renderer.outputColorSpace =
+            THREE.SRGBColorSpace;
+
+        renderer.toneMapping =
+            THREE.ACESFilmicToneMapping;
+
         renderer.toneMappingExposure = 1.2;
 
         container.appendChild(renderer.domElement);
 
-        // ILUMINAÇÃO DE ESTÚDIO
+
+        /* =========================================
+           ILUMINAÇÃO DE AMBIENTE
+        ========================================= */
+
         const pmremGenerator =
             new THREE.PMREMGenerator(renderer);
 
         const roomEnvironment =
             new RoomEnvironment();
 
+        const environmentRenderTarget =
+            pmremGenerator.fromScene(roomEnvironment);
+
         scene.environment =
-            pmremGenerator.fromScene(roomEnvironment).texture;
+            environmentRenderTarget.texture;
+
+        scene.environmentIntensity = 1.0;
 
         roomEnvironment.dispose();
         pmremGenerator.dispose();
 
-        // LUZ AMBIENTE
-        const ambientLight = new THREE.AmbientLight(
-            0xffffff,
-            0.8
-        );
+
+        /* =========================================
+           LUZ AMBIENTE
+        ========================================= */
+
+        const ambientLight =
+            new THREE.AmbientLight(
+                0xffffff,
+                0.8
+            );
 
         scene.add(ambientLight);
 
-        // LUZ PRINCIPAL
-        const keyLight = new THREE.DirectionalLight(
-            0xffffff,
-            3.0
-        );
+
+        /* =========================================
+           LUZ PRINCIPAL
+        ========================================= */
+
+        const keyLight =
+            new THREE.DirectionalLight(
+                0xffffff,
+                3.0
+            );
 
         keyLight.position.set(4, 7, 5);
+
         scene.add(keyLight);
 
-        // LUZ DE PREENCHIMENTO
-        const fillLight = new THREE.DirectionalLight(
-            0xffffff,
-            1.2
-        );
+
+        /* =========================================
+           LUZ DE PREENCHIMENTO
+        ========================================= */
+
+        const fillLight =
+            new THREE.DirectionalLight(
+                0xffffff,
+                1.2
+            );
 
         fillLight.position.set(-4, 3, -2);
+
         scene.add(fillLight);
 
-        // LUZ TRASEIRA
-        const rimLight = new THREE.DirectionalLight(
-            0xffffff,
-            1.5
-        );
+
+        /* =========================================
+           LUZ TRASEIRA
+        ========================================= */
+
+        const rimLight =
+            new THREE.DirectionalLight(
+                0xffffff,
+                1.5
+            );
 
         rimLight.position.set(1, 5, -5);
+
         scene.add(rimLight);
 
-        // CONTROLES
+
+        /* =========================================
+           CONTROLES
+        ========================================= */
+
         const controls = new OrbitControls(
             camera,
             renderer.domElement
@@ -168,16 +266,29 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.06;
 
+        controls.enableRotate = true;
         controls.enableZoom = true;
         controls.enablePan = false;
+
+        controls.minPolarAngle = 0;
+        controls.maxPolarAngle = Math.PI;
 
         controls.minDistance = 0.5;
         controls.maxDistance = 15;
 
-        // CARREGADORES
+        controls.target.set(0, 0, 0);
+
+        controls.update();
+
+
+        /* =========================================
+           CARREGADORES
+        ========================================= */
+
         const loader = new GLTFLoader();
 
-        const dracoLoader = new DRACOLoader();
+        const dracoLoader =
+            new DRACOLoader();
 
         dracoLoader.setDecoderPath(
             "https://www.gstatic.com/draco/v1/decoders/"
@@ -185,51 +296,69 @@
 
         loader.setDRACOLoader(dracoLoader);
 
-        const ktx2Loader = new KTX2Loader();
+
+        const ktx2Loader =
+            new KTX2Loader();
 
         ktx2Loader.setTranscoderPath(
             "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/basis/"
         );
 
         ktx2Loader.detectSupport(renderer);
+
         loader.setKTX2Loader(ktx2Loader);
 
-        // CARREGAR MODELO
+
+        /* =========================================
+           CARREGAMENTO DO MODELO
+        ========================================= */
+
         loader.load(
-            "./LEO_STRONDA_PRETA.glb",
+
+            MODEL_URL,
 
             (gltf) => {
+
                 const model = gltf.scene;
 
                 scene.add(model);
 
-                // CENTRALIZAR MODELO
-                const box = new THREE.Box3().setFromObject(model);
 
-                const center = box.getCenter(new THREE.Vector3());
-                const size = box.getSize(new THREE.Vector3());
+                /* CENTRALIZAR MODELO */
+
+                const box =
+                    new THREE.Box3().setFromObject(model);
+
+                const center =
+                    box.getCenter(new THREE.Vector3());
+
+                const size =
+                    box.getSize(new THREE.Vector3());
 
                 model.position.sub(center);
 
-                // AJUSTAR CÂMERA
+
+                /* AJUSTAR CÂMERA */
+
                 const maxDimension = Math.max(
                     size.x,
                     size.y,
                     size.z
                 );
 
-                const fov = THREE.MathUtils.degToRad(
-                    camera.fov
-                );
-
-                const aspect = camera.aspect;
+                const fov =
+                    THREE.MathUtils.degToRad(camera.fov);
 
                 const verticalDistance =
-                    (size.y / 2) / Math.tan(fov / 2);
+                    (size.y / 2) /
+                    Math.tan(fov / 2);
 
                 const horizontalDistance =
                     (size.x / 2) /
-                    (Math.tan(fov / 2) * aspect);
+                    (
+                        Math.tan(fov / 2) *
+                        camera.aspect
+                    );
 
                 const distance = Math.max(
                     verticalDistance,
@@ -243,27 +372,38 @@
                     distance
                 );
 
-                camera.near = Math.max(
-                    distance / 1000,
-                    0.001
-                );
+                camera.near =
+                    Math.max(distance / 1000, 0.001);
 
-                camera.far = distance * 100;
+                camera.far =
+                    distance * 100;
+
                 camera.updateProjectionMatrix();
 
                 controls.target.set(0, 0, 0);
 
-                controls.minDistance = distance * 0.35;
-                controls.maxDistance = distance * 4;
+                controls.minDistance =
+                    distance * 0.35;
+
+                controls.maxDistance =
+                    distance * 4;
 
                 controls.update();
 
+
+                /* FINALIZAR CARREGAMENTO */
+
                 loading.classList.add("hidden");
+
+                console.log(
+                    "Modelo 3D carregado com sucesso."
+                );
             },
 
             undefined,
 
             (error) => {
+
                 console.error(
                     "Erro ao carregar modelo 3D:",
                     error
@@ -274,56 +414,94 @@
             }
         );
 
-        // REDIMENSIONAMENTO
+
+        /* =========================================
+           RESPONSIVIDADE
+        ========================================= */
+
         window.addEventListener("resize", () => {
-            camera.aspect =
-                window.innerWidth / window.innerHeight;
+
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            camera.aspect = width / height;
 
             camera.updateProjectionMatrix();
 
-            renderer.setSize(
-                window.innerWidth,
-                window.innerHeight
-            );
+            renderer.setSize(width, height);
         });
 
-        // ANIMAÇÃO
+
+        /* =========================================
+           ANIMAÇÃO
+        ========================================= */
+
         function animate() {
+
             requestAnimationFrame(animate);
 
             controls.update();
+
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // FECHAMENTO POR MENSAGEM
+
+        /* =========================================
+           FECHAMENTO DO VISUALIZADOR
+        ========================================= */
+
         const githubOrigin =
             "https://lucasmede1ros.github.io";
 
-        window.addEventListener("message", (event) => {
-            if (event.origin !== githubOrigin) return;
+        function fecharPagina() {
 
-            if (
-                event.data?.type === "viewer3d" &&
-                event.data.action === "close"
-            ) {
-                if (window.parent !== window) {
-                    window.parent.postMessage(
-                        {
-                            type: "viewer3d",
-                            action: "close"
-                        },
-                        "*"
-                    );
-                } else if (window.history.length > 1) {
-                    window.history.back();
-                } else {
-                    window.location.href =
-                        "https://pichaugaming.com.br/";
+            if (window.parent !== window) {
+
+                window.parent.postMessage(
+                    {
+                        type: "viewer3d",
+                        action: "close"
+                    },
+                    "*"
+                );
+
+                return;
+            }
+
+            if (window.history.length > 1) {
+
+                window.history.back();
+
+                return;
+            }
+
+            window.location.href =
+                "https://pichaugaming.com.br/";
+        }
+
+        window.addEventListener(
+            "message",
+            (event) => {
+
+                if (event.origin !== githubOrigin) {
+                    return;
+                }
+
+                if (
+                    !event.data ||
+                    event.data.type !== "viewer3d"
+                ) {
+                    return;
+                }
+
+                if (event.data.action === "close") {
+                    fecharPagina();
                 }
             }
-        });
+        );
+
     </script>
 
 </body>
